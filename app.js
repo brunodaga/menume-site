@@ -17,33 +17,70 @@
   var authScreen = document.getElementById('authScreen');
   var authForm = document.getElementById('authForm');
   var authEmail = document.getElementById('authEmail');
+  var authPassword = document.getElementById('authPassword');
   var authStatus = document.getElementById('authStatus');
   var authSubmit = document.getElementById('authSubmit');
+  var authSignUpBtn = document.getElementById('authSignUpBtn');
   var appRoot = document.getElementById('appRoot');
   var userEmailEl = document.getElementById('userEmail');
   var signOutBtn = document.getElementById('signOutBtn');
 
+  function setAuthBusy(busy){
+    authSubmit.disabled = busy;
+    authSignUpBtn.disabled = busy;
+  }
+
   authForm.addEventListener('submit', function(e){
     e.preventDefault();
     var email = authEmail.value.trim();
-    if(!email) return;
-    authSubmit.disabled = true;
+    var password = authPassword.value;
+    if(!email || !password) return;
+    setAuthBusy(true);
     authStatus.className = 'auth-status';
-    authStatus.textContent = 'Enviando link…';
-    supabase.auth.signInWithOtp({
-      email: email,
-      options: { emailRedirectTo: window.location.origin + window.location.pathname }
-    }).then(function(res){
-      authSubmit.disabled = false;
+    authStatus.textContent = 'Entrando…';
+    supabase.auth.signInWithPassword({ email: email, password: password }).then(function(res){
+      setAuthBusy(false);
       if(res.error){
         authStatus.className = 'auth-status error';
-        authStatus.textContent = 'Não foi possível enviar o link: ' + res.error.message;
+        authStatus.textContent = 'Não foi possível entrar: ' + res.error.message;
         return;
       }
       authStatus.className = 'auth-status ok';
-      authStatus.textContent = 'Link enviado! Confira seu e-mail (' + email + ') e clique para entrar.';
+      authStatus.textContent = '';
     }).catch(function(){
-      authSubmit.disabled = false;
+      setAuthBusy(false);
+      authStatus.className = 'auth-status error';
+      authStatus.textContent = 'Erro de conexão. Tente novamente.';
+    });
+  });
+
+  authSignUpBtn.addEventListener('click', function(){
+    var email = authEmail.value.trim();
+    var password = authPassword.value;
+    if(!email || !password){
+      authStatus.className = 'auth-status error';
+      authStatus.textContent = 'Preencha e-mail e senha (mínimo 6 caracteres) para criar a conta.';
+      return;
+    }
+    setAuthBusy(true);
+    authStatus.className = 'auth-status';
+    authStatus.textContent = 'Criando conta…';
+    supabase.auth.signUp({ email: email, password: password }).then(function(res){
+      setAuthBusy(false);
+      if(res.error){
+        authStatus.className = 'auth-status error';
+        authStatus.textContent = 'Não foi possível criar a conta: ' + res.error.message;
+        return;
+      }
+      if(res.data && res.data.session){
+        authStatus.className = 'auth-status ok';
+        authStatus.textContent = '';
+      } else {
+        authStatus.className = 'auth-status ok';
+        authStatus.textContent = 'Conta criada! Se pedir confirmação por e-mail, confirme o e-mail antes de entrar.';
+      }
+    }).catch(function(){
+      setAuthBusy(false);
       authStatus.className = 'auth-status error';
       authStatus.textContent = 'Erro de conexão. Tente novamente.';
     });
