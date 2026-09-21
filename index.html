@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MenuMe</title>
+<meta name="description" content="Registre e relembre o que você comeu — para não repetir os erros e voltar aos acertos.">
+<meta name="theme-color" content="#AD741C">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ============== AUTH SCREEN ============== -->
+  <div class="auth-page" id="authScreen">
+    <div class="auth-card">
+      <div class="auth-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z"/>
+        </svg>
+      </div>
+      <h1>MenuMe</h1>
+      <p>o que vale repetir — e o que nunca mais</p>
+
+      <form class="auth-form" id="authForm">
+        <div class="field">
+          <label for="authEmail">Seu e-mail</label>
+          <input id="authEmail" type="email" required placeholder="voce@exemplo.com" autocomplete="email">
+        </div>
+        <button type="submit" class="btn primary" id="authSubmit">Enviar link mágico</button>
+        <div class="auth-status" id="authStatus"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============== APP (visível só após login) ============== -->
+  <div id="appRoot" hidden>
+    <div class="page">
+      <header class="topbar">
+        <div class="topbar-actions">
+          <span class="user-email" id="userEmail"></span>
+          <button type="button" class="signout-link" id="signOutBtn">Sair</button>
+        </div>
+        <div class="brand-row">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z"/>
+            </svg>
+          </div>
+          <div class="brand">
+            <div class="eyebrow">Diário de campo gastronômico</div>
+            <h1>MenuMe</h1>
+            <p>o que vale repetir — e o que nunca mais</p>
+          </div>
+        </div>
+        <div class="stats" id="stats">
+          <div class="stat"><span class="num mono" id="statTotal">–</span><span class="lbl">pratos</span></div>
+          <div class="stat"><span class="num mono" id="statPlaces">–</span><span class="lbl">lugares</span></div>
+          <div class="stat warn"><span class="num mono" id="statAvoid">–</span><span class="lbl">nunca mais</span></div>
+        </div>
+        <div class="search-wrap">
+          <input id="search" type="search" placeholder="Já esteve nesse lugar? Busque antes de pedir de novo…" autocomplete="off">
+        </div>
+      </header>
+
+      <div id="alertBanner" class="alert" hidden>
+        <div class="alert-title" id="alertTitle"></div>
+        <div id="alertItems"></div>
+      </div>
+
+      <div class="filters" id="filters" role="group" aria-label="Filtrar por avaliação"></div>
+
+      <main class="list" id="list">
+        <div class="skel"></div>
+        <div class="skel"></div>
+        <div class="skel"></div>
+      </main>
+    </div>
+
+    <button class="fab" id="addBtn" aria-label="Registrar em um lugar">+</button>
+
+    <!-- Check-in sheet -->
+    <div class="sheet-overlay" id="checkinOverlay" hidden>
+      <div class="sheet" id="checkinSheet">
+        <div id="ciLocating" class="locating">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Vendo se você está em algum lugar já registrado…</span>
+        </div>
+
+        <div id="ciDetected" hidden style="display:flex; flex-direction:column; gap:12px;">
+          <h2>Você está aqui?</h2>
+          <div class="detected-card">
+            <div class="place-name" id="ciDetectedName"></div>
+            <div class="place-meta" id="ciDetectedMeta"></div>
+          </div>
+          <div class="sheet-actions">
+            <button type="button" class="btn" id="ciNotHere">Não é aqui</button>
+            <button type="button" class="btn primary" id="ciYesHere">Sim, é aqui</button>
+          </div>
+        </div>
+
+        <div id="ciPicker" hidden style="display:flex; flex-direction:column; gap:12px;">
+          <h2>Onde você está?</h2>
+          <div class="field">
+            <label for="ciSearch">Buscar lugar já registrado</label>
+            <input id="ciSearch" type="text" placeholder="Nome do restaurante, padaria…" autocomplete="off">
+          </div>
+          <div class="picker-results" id="ciResults"></div>
+          <button type="button" class="btn" id="ciCancel">Cancelar</button>
+        </div>
+
+        <form id="ciNewPlaceForm" hidden style="display:flex; flex-direction:column; gap:12px;">
+          <button type="button" class="back-link" id="ciBackToPicker">‹ Voltar à busca</button>
+          <h2>Novo lugar</h2>
+          <div class="field">
+            <label for="ciNewName">Nome</label>
+            <input id="ciNewName" required maxlength="80" placeholder="Ex: Padaria do Zé">
+          </div>
+          <div class="field">
+            <label for="ciNewCategory">Tipo</label>
+            <select id="ciNewCategory">
+              <option value="restaurante">Restaurante</option>
+              <option value="padaria">Padaria</option>
+              <option value="cafeteria">Cafeteria</option>
+              <option value="bar">Bar</option>
+              <option value="lanchonete">Lanchonete</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="sheet-actions">
+            <button type="button" class="btn" id="ciNewCancel">Cancelar</button>
+            <button type="submit" class="btn primary">Criar lugar</button>
+          </div>
+        </form>
+
+        <div id="ciAction" hidden style="display:flex; flex-direction:column; gap:14px;">
+          <button type="button" class="back-link" id="ciBackToPicker2">‹ Trocar lugar</button>
+          <div>
+            <div class="place-name" id="ciActionName"></div>
+            <div class="place-meta" id="ciActionMeta"></div>
+          </div>
+          <div class="action-choice">
+            <button type="button" class="btn big" id="ciRateDish">Avaliar um prato</button>
+            <button type="button" class="btn big" id="ciRatePlace">Avaliar o restaurante em geral</button>
+          </div>
+          <button type="button" class="btn" id="ciClose2">Fechar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dish sheet -->
+    <div class="sheet-overlay" id="dishOverlay" hidden>
+      <form class="sheet" id="dishForm">
+        <h2 id="dishSheetTitle">Novo prato</h2>
+        <div class="sheet-sub" id="dishPlaceLine"></div>
+        <div class="field">
+          <label for="fDish">Prato / item</label>
+          <input id="fDish" required maxlength="80" placeholder="Ex: Nhoque de mandioquinha">
+        </div>
+        <div class="field">
+          <label for="fDate">Data</label>
+          <input id="fDate" type="date" required>
+        </div>
+        <div class="field">
+          <label>Avaliação</label>
+          <div class="rating-grid" id="dishRatingGrid"></div>
+        </div>
+        <div class="field">
+          <label for="fNote">Anotação (opcional)</label>
+          <textarea id="fNote" maxlength="400" placeholder="Detalhes que ajudam a lembrar: tempero, preço, quem indicou…"></textarea>
+        </div>
+        <div class="sheet-actions">
+          <button type="button" class="btn danger" id="dishDeleteBtn" hidden>Excluir</button>
+          <button type="button" class="btn" id="dishCancelBtn">Cancelar</button>
+          <button type="submit" class="btn primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Overall place sheet -->
+    <div class="sheet-overlay" id="overallOverlay" hidden>
+      <form class="sheet" id="overallForm">
+        <h2>Avaliação geral</h2>
+        <div class="sheet-sub" id="overallPlaceLine"></div>
+        <div class="field">
+          <label for="fPlaceCategory">Tipo do lugar</label>
+          <select id="fPlaceCategory">
+            <option value="restaurante">Restaurante</option>
+            <option value="padaria">Padaria</option>
+            <option value="cafeteria">Cafeteria</option>
+            <option value="bar">Bar</option>
+            <option value="lanchonete">Lanchonete</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Como você avalia o lugar em geral?</label>
+          <div class="rating-grid" id="overallRatingGrid"></div>
+        </div>
+        <div class="field">
+          <label for="fOverallNote">Anotação (opcional)</label>
+          <textarea id="fOverallNote" maxlength="400" placeholder="Ambiente, atendimento, preço…"></textarea>
+        </div>
+        <div class="sheet-actions">
+          <button type="button" class="btn" id="overallCancelBtn">Cancelar</button>
+          <button type="submit" class="btn primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
